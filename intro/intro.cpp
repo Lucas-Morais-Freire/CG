@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <initializer_list>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -10,10 +11,13 @@ void windowSizeChanged(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
 GLuint compileShader(const char* path, GLenum shaderType);
+GLuint linkShaders(std::initializer_list<GLuint> shaders);
 
 int main(int argc, char** argv) {
-    // init glfw
+    //// init glfw
     myInit();
+
+    //// window init
 
     GLFWwindow* window = glfwCreateWindow(800, 600, "Za Warudo!", NULL, NULL); // create window that is 800x600px
     if (window == NULL) { // check for success
@@ -30,12 +34,17 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    // setup
+    //// shader setup
 
-    glViewport(0, 0, 800, 600); // set up ogl viewport
-    glClearColor(0.0f, 0.7f, 0.8f, 1.0f); // set up clear color
-    glClear(GL_COLOR_BUFFER_BIT); // write to the back buffer
-    glfwSwapBuffers(window); // put it on the front
+    // get vertex shader
+    GLuint vertexShader = compileShader("vertex.vert", GL_VERTEX_SHADER);
+    GLuint fragmentShader = compileShader("fragment.frag", GL_FRAGMENT_SHADER);
+    GLuint shaderProgram = linkShaders({vertexShader, fragmentShader});
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    glUseProgram(shaderProgram);
+
+    //// geometry setup
 
     // define vertices of a triangle
     GLfloat vertices[] = {
@@ -45,28 +54,57 @@ int main(int argc, char** argv) {
     };
 
     // define the VBO
-    GLuint VBO;
+    GLuint VAO, VBO;
+    
+    glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
+    glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    // get vertex shader
-    GLuint vertexShader = compileShader("vertex.vert", GL_VERTEX_SHADER);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	// Enable the Vertex Attribute so that OpenGL knows to use it
+	glEnableVertexAttribArray(0);
+
+	// Bind both the VBO and VAO to 0 so that we don't accidentally modify the VAO and VBO we created
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+    //// window setup
+
+    glViewport(0, 0, 800, 600); // set up ogl viewport
+    glClearColor(0.0f, 0.7f, 0.8f, 1.0f); // set up clear color
+    glClear(GL_COLOR_BUFFER_BIT); // write to the back buffer
+    glfwSwapBuffers(window); // put it on the front
 
     // loop
 
     while(!glfwWindowShouldClose(window)) { // while window is open
-        glfwPollEvents(); // poll events
-
-        processInput(window); // process inputs
-        glClear(GL_COLOR_BUFFER_BIT); // clear the back buffer
-        glfwSwapBuffers(window); // put it on the front
+		// Take care of all GLFW events
+		glfwPollEvents();
+        // process inputs
+        processInput(window);
+        // Specify the color of the background
+		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+		// Clean the back buffer and assign the new color to it
+		glClear(GL_COLOR_BUFFER_BIT);
+		// Tell OpenGL which Shader Program we want to use
+		glUseProgram(shaderProgram);
+		// Bind the VAO so OpenGL knows to use it
+		glBindVertexArray(VAO);
+		// Draw the triangle using the GL_TRIANGLES primitive
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		// Swap the back buffer with the front buffer
+		glfwSwapBuffers(window);
     }
 
     // end
 
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteProgram(shaderProgram);
     glfwDestroyWindow(window);
     glfwTerminate(); // end glfw
     return 0;
@@ -110,5 +148,31 @@ GLuint compileShader(const char* path, GLenum shaderType) {
     glShaderSource(shader, 1, &source, nullptr);
     glCompileShader(shader);
 
+    int success;
+    char infoLog[512];
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(shader, 512, nullptr, infoLog);
+        throw std::runtime_error(std::string(infoLog) + "On file: " + path);
+    }
+
     return shader;
+}
+
+GLuint linkShaders(std::initializer_list<GLuint> shaders) {
+    GLuint shaderProgram = glCreateProgram();
+    for (auto shader : shaders) {
+        glAttachShader(shaderProgram, shader);
+    }
+    glLinkProgram(shaderProgram);
+
+    int success;
+    char infoLog[512];
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
+        throw std::runtime_error(infoLog);
+    }
+
+    return shaderProgram;
 }
