@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
     } catch (std::exception& e) {
-        std::cerr << e.what();
+        std::cerr << "\033[1;31m" << e.what() << "\033[0m";
         glDeleteProgram(shaderProgram);
         glfwTerminate();
         return -1;
