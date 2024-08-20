@@ -18,7 +18,7 @@ int main(int argc, char** argv) {
 
     //// window init
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Za Warudo!", NULL, NULL); // create window that is 800x600px
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "Za Warudo!", NULL, NULL); // create window that is 800x600px
     if (window == nullptr) { // check for success
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -56,10 +56,16 @@ int main(int argc, char** argv) {
     //// geometry setup
 
     // define vertices of a triangle
-    Vertex vertices[3] = {
-        {-0.5f, -0.5f},
-        { 0.5f, -0.5f},
-        { 0.0f,  0.5f}
+    Vertex vertices[4] = {
+        {-1.0f, -1.0f},
+        { 1.0f, -1.0f},
+        { 1.0f,  1.0f},
+        {-1.0f,  1.0f}
+    };
+
+    GLuint indices[6] = {
+        0, 1, 2,
+        0, 2, 3
     };
 
     // define the buffer for the vertices
@@ -76,8 +82,14 @@ int main(int argc, char** argv) {
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)0);
     glEnableVertexAttribArray(0);
 
+    // define index buffer
+    GLuint Ibuffer;
+    glGenBuffers(1, &Ibuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Ibuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
     //// viewport setup
-    glViewport(0,0,800,600);
+    glViewport(0,0,1280,720);
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 
     // loop
@@ -88,7 +100,7 @@ int main(int argc, char** argv) {
 
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
 		glfwSwapBuffers(window);
     }
@@ -97,6 +109,7 @@ int main(int argc, char** argv) {
 
     glDeleteVertexArrays(1, &Varray);
     glDeleteBuffers(1, &Vbuffer);
+    glDeleteBuffers(1, &Ibuffer);
     glDeleteProgram(shaderProgram);
     glfwDestroyWindow(window);
     glfwTerminate(); // end glfw
