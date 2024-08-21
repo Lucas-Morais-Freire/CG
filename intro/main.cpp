@@ -5,8 +5,8 @@
 #include <auxfuncs.hpp>
 
 struct Vertex {
-    GLfloat x;
-    GLfloat y;
+    GLfloat x, y;
+    GLfloat R, G, B;
 };
 
 int main(int argc, char** argv) {
@@ -57,10 +57,10 @@ int main(int argc, char** argv) {
 
     // define vertices of a triangle
     Vertex vertices[4] = {
-        {-1.0f, -1.0f},
-        { 1.0f, -1.0f},
-        { 1.0f,  1.0f},
-        {-1.0f,  1.0f}
+        {-1.0f, -1.0f, 1.0f, 0.0f, 0.0f},
+        { 1.0f, -1.0f, 0.0f, 1.0f, 0.0f},
+        { 1.0f,  1.0f, 0.0f, 0.0f, 1.0f},
+        {-1.0f,  1.0f, 0.0f, 1.0f, 1.0f}
     };
 
     GLuint indices[6] = {
@@ -69,28 +69,32 @@ int main(int argc, char** argv) {
     };
 
     // define the buffer for the vertices
-    GLuint Vbuffer;
-    glGenBuffers(1, &Vbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, Vbuffer);
+    GLuint recBuffer;
+    glGenBuffers(1, &recBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, recBuffer); // selection = binding
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    // make bound buffer act as vertex array
-    GLuint Varray;
-    glGenVertexArrays(1, &Varray);
-    glBindVertexArray(Varray);
-    // tell ogl how to interpret the buffer
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)0);
+    // create VAO for rectangle
+    GLuint recAttrib;
+    glGenVertexArrays(1, &recAttrib);
+    glBindVertexArray(recAttrib);
+
+    // tell ogl how to recBuffer
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x)); // define position attrib
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, R)); // definne color attrib
     glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
 
     // define index buffer
-    GLuint Ibuffer;
-    glGenBuffers(1, &Ibuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Ibuffer);
+    GLuint recIndices;
+    glGenBuffers(1, &recIndices);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, recIndices);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     //// viewport setup
     glViewport(0,0,1280,720);
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // loop
 
@@ -107,9 +111,9 @@ int main(int argc, char** argv) {
 
     // end
 
-    glDeleteVertexArrays(1, &Varray);
-    glDeleteBuffers(1, &Vbuffer);
-    glDeleteBuffers(1, &Ibuffer);
+    glDeleteVertexArrays(1, &recAttrib);
+    glDeleteBuffers(1, &recBuffer);
+    glDeleteBuffers(1, &recIndices);
     glDeleteProgram(shaderProgram);
     glfwDestroyWindow(window);
     glfwTerminate(); // end glfw
