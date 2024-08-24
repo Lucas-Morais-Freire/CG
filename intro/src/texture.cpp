@@ -18,6 +18,7 @@ texture::texture(const std::string& path, GLint format_to_store) {
         format = GL_RGBA;
         break;
     default:
+        stbi_image_free(data);
         throw std::runtime_error("unknown format");
     }
     glGenTextures(1, &id);

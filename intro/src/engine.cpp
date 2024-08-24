@@ -11,6 +11,7 @@ engine::engine(const int width, const int height, const int aspX, const int aspY
 
     window = glfwCreateWindow(width, height, "Za Warudo!", NULL, NULL); // create window that is 800x600px
     if (window == nullptr) { // check for success
+        glfwTerminate();
         throw std::runtime_error("Failed to create GLFW window");
     }
     
@@ -25,6 +26,8 @@ engine::engine(const int width, const int height, const int aspX, const int aspY
     //// load GLAD function pointers
  
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) { // load pointers for functions with GLAD
+        glfwDestroyWindow(window);
+        glfwTerminate();
         throw std::runtime_error("Failed to initialize GLAD");
     }
 

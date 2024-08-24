@@ -26,6 +26,7 @@ GLuint shaderProg::compileShader(const std::string& path, GLenum type) {
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
         std::vector<char> infoLog(length);
         glGetShaderInfoLog(shader, length, nullptr, infoLog.data());
+        glDeleteShader(shader);
         throw std::runtime_error("Shader compilation error:\n" + std::string(infoLog.data()) + "On file: " + path + '\n');
     }
 

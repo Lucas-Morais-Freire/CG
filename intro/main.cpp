@@ -40,13 +40,6 @@ int main(int argc, char** argv) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    texture tex1("img/sonic.png", GL_RGB);
-    tex1.use(GL_TEXTURE0);
-    eng.setAspectRatio(tex1.getWidth(), tex1.getHeight());
-
     // define vertices of a triangle
     Vertex vertices[] = {
     //   x  y   r  g  b  s  t
@@ -90,11 +83,17 @@ int main(int argc, char** argv) {
 
     GLint brightness_loc = mainShader.declareUniform("brightness");
 
+    texture tex1("res/img/sonic.png", GL_RGB);
     GLint tex1_loc = mainShader.declareUniform("tex1");
     mainShader.setUniform1i(tex1_loc, 0);
 
+    texture tex2("res/img/shadow.jpg", GL_RGB);
+    GLint tex2_loc = mainShader.declareUniform("tex2");
+    mainShader.setUniform1i(tex2_loc, 1);
+
     //// loop setup
-    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+    glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
+    eng.setAspectRatio(tex1.getWidth(), tex1.getHeight());
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // loop
@@ -104,6 +103,9 @@ int main(int argc, char** argv) {
     GLfloat step = 0.01f;
     auto render = [&]() {
         glClear(GL_COLOR_BUFFER_BIT);
+
+        tex1.use(GL_TEXTURE0);
+        tex2.use(GL_TEXTURE1);
 
         mainShader.setUniform1f(brightness_loc, brightness);
 
