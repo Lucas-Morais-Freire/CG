@@ -73,3 +73,7 @@ GLint shaderProg::declareUniform(const std::string& name) const {
 void shaderProg::setUniform1f(GLint uniform, GLfloat value) const {
     glUniform1f(uniform, value);
 }
+
+void shaderProg::setUniform1i(GLint uniform, GLint value) const {
+    glUniform1i(uniform, value);
+}

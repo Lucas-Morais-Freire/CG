@@ -7,18 +7,18 @@
 #include <iostream>
 #include <cmath>
 
+#include <stb_image.h>
 #include <shader.hpp>
 #include <engine.hpp>
-#include <stb_image.h>
+#include <texture.hpp>
 
 struct Vertex {
-    GLfloat x, y;    // positions
+    GLfloat x, y;    // vertex coords
     GLfloat r, g, b; // colors
     GLfloat s, t;    // texture coords
 };
 
 int main(int argc, char** argv) {
-    stbi_set_flip_vertically_on_load(1); // load images vertically mirrored
     engine eng(1280, 720);
 
     //// silly
@@ -43,20 +43,9 @@ int main(int argc, char** argv) {
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    int tw, th, nrChannels;
-    unsigned char* data = stbi_load("img/sonic.png", &tw, &th, &nrChannels, 0);
-    if (data == nullptr) {
-        throw std::runtime_error("Image could not be loaded.");
-    }
-    eng.setAspectRatio(tw, th);
-
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    stbi_image_free(data);
+    texture tex1("img/sonic.png", GL_RGB);
+    tex1.use(GL_TEXTURE0);
+    eng.setAspectRatio(tex1.getWidth(), tex1.getHeight());
 
     // define vertices of a triangle
     Vertex vertices[] = {
@@ -100,6 +89,9 @@ int main(int argc, char** argv) {
     // define uniforms
 
     GLint brightness_loc = mainShader.declareUniform("brightness");
+
+    GLint tex1_loc = mainShader.declareUniform("tex1");
+    mainShader.setUniform1i(tex1_loc, 0);
 
     //// loop setup
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);

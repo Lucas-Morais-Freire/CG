@@ -20,6 +20,7 @@ public:
     void use() const;
     GLint declareUniform(const std::string& name) const;
     void setUniform1f(GLint uniform, GLfloat value) const;
+    void setUniform1i(GLint uniform, GLint value) const;
 };
 
 #endif
