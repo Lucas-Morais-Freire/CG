@@ -9,13 +9,16 @@
 
 #include <shader.hpp>
 #include <engine.hpp>
+#include <stb_image.h>
 
 struct Vertex {
-    GLfloat x, y;
-    GLfloat R, G, B;
+    GLfloat x, y;    // positions
+    GLfloat r, g, b; // colors
+    GLfloat s, t;    // texture coords
 };
 
 int main(int argc, char** argv) {
+    stbi_set_flip_vertically_on_load(1); // load images vertically mirrored
     engine eng(1280, 720, 16, 9);
 
     //// silly
@@ -32,19 +35,11 @@ int main(int argc, char** argv) {
 
     // define vertices of a triangle
     Vertex vertices[] = {
-        {-1,1,1,0,1},
-        {0,1,0,1,0},
-        {1,1,0,0,1},
-        {1,-1,0.7,0,1},
-        {0,-1,0,1,1},
-        {-1,-1,0.7,1,0}
-    };
-
-    GLuint indices[] = {
-        1,5,0,
-        5,4,1,
-        1,2,4,
-        2,3,4
+    //   x  y   r  g  b  s  t
+        {-1, 1, 1, 0, 0, 0, 1},
+        { 1, 1, 0, 1, 0, 1, 1},
+        { 1,-1, 0, 0, 1, 1, 0},
+        {-1,-1, 0, 1, 1, 0, 0},
     };
 
     // define the buffer for the vertices
@@ -60,9 +55,16 @@ int main(int argc, char** argv) {
 
     // tell ogl how to recBuffer
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x)); // define position attrib
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, R)); // definne color attrib
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, r)); // define color attrib
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, s)); // define color attrib
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+
+    GLuint indices[] = {
+        0,1,2,
+        0,2,3
+    };
 
     // define index buffer
     GLuint recIndices;
@@ -70,9 +72,31 @@ int main(int argc, char** argv) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, recIndices);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    // define uniform
+    // texture config
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 
-    GLint brightness_loc = mainShader.declareUniform("brightness");
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    int tw, th, nrChannels;
+    unsigned char* data = stbi_load("img/sonic.png", &tw, &th, &nrChannels, 0);
+    if (data == nullptr) {
+        throw std::runtime_error("Image could not be loaded.");
+    }
+
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
+
+    // define uniforms
 
     //// viewport setup
     glViewport(0,0,1280,720);
@@ -83,12 +107,7 @@ int main(int argc, char** argv) {
 
     auto render = [&]() {
         glClear(GL_COLOR_BUFFER_BIT);
-
-        float timeValue = glfwGetTime();
-        float brightness = sin(timeValue) / 2.0f + 0.5f;
-        mainShader.setUniform1f(brightness_loc, brightness);
-
-        glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, nullptr);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
     };
 
     auto inputProc = [&]() {
