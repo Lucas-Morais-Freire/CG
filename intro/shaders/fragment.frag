@@ -9,5 +9,5 @@ uniform float brightness;
 out vec4 color;
 
 void main() {
-    color = brightness*texture(tex, fTexCoord)*vec4(fColor, 1.0);
+    color = brightness*texture(tex, fTexCoord);
 }

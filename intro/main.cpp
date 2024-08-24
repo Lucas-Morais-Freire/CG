@@ -19,7 +19,7 @@ struct Vertex {
 
 int main(int argc, char** argv) {
     stbi_set_flip_vertically_on_load(1); // load images vertically mirrored
-    engine eng(1280, 720, 16, 9);
+    engine eng(1280, 720);
 
     //// silly
 
@@ -34,20 +34,21 @@ int main(int argc, char** argv) {
     //// geometry setup
 
     // texture config
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     int tw, th, nrChannels;
     unsigned char* data = stbi_load("img/sonic.png", &tw, &th, &nrChannels, 0);
     if (data == nullptr) {
         throw std::runtime_error("Image could not be loaded.");
     }
+    eng.setAspectRatio(tw, th);
 
     GLuint texture;
     glGenTextures(1, &texture);
@@ -100,8 +101,7 @@ int main(int argc, char** argv) {
 
     GLint brightness_loc = mainShader.declareUniform("brightness");
 
-    //// viewport setup
-    glViewport(0,0,1280,720);
+    //// loop setup
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
