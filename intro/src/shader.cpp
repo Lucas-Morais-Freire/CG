@@ -1,6 +1,7 @@
 #include <shader.hpp>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 GLuint shaderProg::compileShader(const std::string& path, GLenum type) {
     std::ifstream in(path);
@@ -23,9 +24,9 @@ GLuint shaderProg::compileShader(const std::string& path, GLenum type) {
     if (!success) {
         int length;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
-        char infoLog[length];
-        glGetShaderInfoLog(shader, length, nullptr, infoLog);
-        throw std::runtime_error("Shader compilation error:\n" + std::string(infoLog) + "On file: " + path + '\n');
+        std::vector<char> infoLog(length);
+        glGetShaderInfoLog(shader, length, nullptr, infoLog.data());
+        throw std::runtime_error("Shader compilation error:\n" + std::string(infoLog.data()) + "On file: " + path + '\n');
     }
 
     return shader;
@@ -33,7 +34,7 @@ GLuint shaderProg::compileShader(const std::string& path, GLenum type) {
 
 shaderProg::shaderProg(const std::initializer_list<std::pair<std::string,int>>& paths_and_types) {
     id = glCreateProgram();
-    GLuint shaders[paths_and_types.size()];
+    std::vector<GLuint> shaders(paths_and_types.size());
 
     std::size_t i = 0;
     for (const auto& pair : paths_and_types) {
@@ -42,8 +43,8 @@ shaderProg::shaderProg(const std::initializer_list<std::pair<std::string,int>>& 
     }
     glLinkProgram(id);
 
-    for (i = 0; i < paths_and_types.size(); i++) {
-        glDeleteShader(shaders[i]);
+    for (const GLuint shader: shaders) {
+        glDeleteShader(shader);
     }
 
     int success;
@@ -51,9 +52,9 @@ shaderProg::shaderProg(const std::initializer_list<std::pair<std::string,int>>& 
     if (!success) {
         int length;
         glGetProgramiv(id, GL_INFO_LOG_LENGTH, &length);
-        char infoLog[length];
-        glGetProgramInfoLog(id, length, nullptr, infoLog);
-        throw std::runtime_error("Linking error:\n" + std::string(infoLog));
+        std::vector<char> infoLog(length);
+        glGetProgramInfoLog(id, length, nullptr, infoLog.data());
+        throw std::runtime_error("Linking error:\n" + std::string(infoLog.data()));
     }
 }
 

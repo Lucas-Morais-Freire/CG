@@ -33,6 +33,30 @@ int main(int argc, char** argv) {
 
     //// geometry setup
 
+    // texture config
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    int tw, th, nrChannels;
+    unsigned char* data = stbi_load("img/sonic.png", &tw, &th, &nrChannels, 0);
+    if (data == nullptr) {
+        throw std::runtime_error("Image could not be loaded.");
+    }
+
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
+
     // define vertices of a triangle
     Vertex vertices[] = {
     //   x  y   r  g  b  s  t
@@ -72,31 +96,9 @@ int main(int argc, char** argv) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, recIndices);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    // texture config
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    int tw, th, nrChannels;
-    unsigned char* data = stbi_load("img/sonic.png", &tw, &th, &nrChannels, 0);
-    if (data == nullptr) {
-        throw std::runtime_error("Image could not be loaded.");
-    }
-
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tw, th, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    stbi_image_free(data);
-
     // define uniforms
+
+    GLint brightness_loc = mainShader.declareUniform("brightness");
 
     //// viewport setup
     glViewport(0,0,1280,720);
@@ -105,8 +107,22 @@ int main(int argc, char** argv) {
 
     // loop
 
+    GLfloat brightness = 0.0f;
+    bool up = true;
+    GLfloat step = 0.01f;
     auto render = [&]() {
         glClear(GL_COLOR_BUFFER_BIT);
+
+        mainShader.setUniform1f(brightness_loc, brightness);
+
+        if (up) {
+            brightness += step;
+            up = brightness >= 1.0f ? false : true;
+        } else {
+            brightness -= step;
+            up = brightness <= 0.0f ? true : false;
+        }
+
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
     };
 
