@@ -23,20 +23,11 @@ $(TARGET): $(OBJS)
 	$(COMP) $(FLAGS) $^ -o $@ $(INCLUDEFLAGS) $(LIBPATHFLAGS) $(LIBFLAGS)
 
 main.o: main.cpp include\engine.hpp include\shader.hpp include\stb_image.h
-	$(COMP) $(FLAGS) -c $< -o $@ $(INCLUDEFLAGS) $(LIBPATHFLAGS) $(LIBFLAGS)
-
 src\engine.o: src\engine.cpp include\engine.hpp
-	$(COMP) $(FLAGS) -c $< -o $@ $(INCLUDEFLAGS) $(LIBPATHFLAGS) $(LIBFLAGS)
-
 src\shader.o: src\shader.cpp include\shader.hpp
-	$(COMP) $(FLAGS) -c $< -o $@ $(INCLUDEFLAGS) $(LIBPATHFLAGS) $(LIBFLAGS)
-
 src\stb_image.o: src\stb_image.c include\stb_image.h
 	$(COMP) $(FLAGS) -c $< -o $@ $(INCLUDEFLAGS) $(LIBPATHFLAGS) $(LIBFLAGS)
 
-%.o: %.cpp
-	$(COMP) $(FLAGS) -c $< -o $@ $(INCLUDEFLAGS) $(LIBPATHFLAGS) $(LIBFLAGS)
-	
 %.o: %.cpp
 	$(COMP) $(FLAGS) -c $< -o $@ $(INCLUDEFLAGS) $(LIBPATHFLAGS) $(LIBFLAGS)
 
