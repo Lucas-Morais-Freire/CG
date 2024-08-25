@@ -2,6 +2,10 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -12,14 +16,26 @@
 #include <engine.hpp>
 #include <texture.hpp>
 
+void printMatrix(const glm::mat4& mat) {
+    for (int j = 0; j < 4; j++) {
+        std::cout << "[" << mat[0][j];
+        for (int i = 1; i < 4; i++) {
+            std::cout << ", " << mat[i][j];
+        }
+        std::cout << "]\n";
+    }
+}
+
 struct Vertex {
-    GLfloat x, y;    // vertex coords
+    GLfloat x, y, z; // position coords
     GLfloat r, g, b; // colors
-    GLfloat s, t;    // texture coords
+    // GLfloat s, t;    // texture coords
 };
 
-int main(int argc, char** argv) {
+int main() {
     engine eng(1280, 720);
+    glfwSwapInterval(1);
+    std::cout << glGetString(GL_VERSION) << '\n';
 
     //// silly
 
@@ -33,44 +49,54 @@ int main(int argc, char** argv) {
 
     //// geometry setup
 
-    // texture config
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    // define vertices of a triangle
-    Vertex vertices[] = {
-    //   x  y   r  g  b  s  t
-        {-1, 1, 1, 0, 0, 0, 1},
-        { 1, 1, 0, 1, 0, 1, 1},
-        { 1,-1, 0, 0, 1, 1, 0},
-        {-1,-1, 0, 1, 1, 0, 0},
+    // define vertices
+    Vertex vertices[8] = {
+    //    x      y      z     r     g     b
+        {-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f},
+        { 0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f},
+        { 0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 1.0f},
+        {-0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 0.0f},
+        {-0.5f,  0.5f, -0.5f, 1.0f, 0.0f, 1.0f},
+        { 0.5f,  0.5f, -0.5f, 0.0f, 1.0f, 1.0f},
+        { 0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f},
+        {-0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 0.0f},
     };
 
     // define the buffer for the vertices
     GLuint recBuffer;
     glGenBuffers(1, &recBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, recBuffer); // selection = binding
+    glBindBuffer(GL_ARRAY_BUFFER, recBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    // create VAO for rectangle
+    // create Array Object
     GLuint recAttrib;
     glGenVertexArrays(1, &recAttrib);
     glBindVertexArray(recAttrib);
 
     // tell ogl how to recBuffer
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x)); // define position attrib
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x)); // define vertex position attrib
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, r)); // define color attrib
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, s)); // define color attrib
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
 
     GLuint indices[] = {
         0,1,2,
-        0,2,3
+        0,2,3,
+
+        0,7,4,
+        0,3,7,
+
+        1,5,6,
+        1,6,2,
+
+        4,6,5,
+        4,7,6,
+
+        0,4,5,
+        0,5,1,
+
+        2,7,3,
+        2,6,7
     };
 
     // define index buffer
@@ -79,45 +105,40 @@ int main(int argc, char** argv) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, recIndices);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
+
     // define uniforms
 
-    GLint brightness_loc = mainShader.declareUniform("brightness");
+    GLint modelMat_loc = glGetUniformLocation(mainShader(), "modelMat");
+    glm::mat4 modelMat(1.0f); // no change to model with respect to world
+    glUniformMatrix4fv(modelMat_loc, 1, GL_FALSE, glm::value_ptr(modelMat));
 
-    texture tex1("res/img/sonic.png", GL_RGB);
-    GLint tex1_loc = mainShader.declareUniform("tex1");
-    mainShader.setUniform1i(tex1_loc, 0);
-
-    texture tex2("res/img/shadow.jpg", GL_RGB);
-    GLint tex2_loc = mainShader.declareUniform("tex2");
-    mainShader.setUniform1i(tex2_loc, 1);
+    GLint viewMat_loc = glGetUniformLocation(mainShader(), "viewMat");
+    glm::mat4 viewMat(1.0f);
+    viewMat = glm::translate(viewMat, glm::vec3(0.0f, 0.0f, -3.0f));
+    viewMat = glm::rotate(viewMat, glm::radians(60.0f), glm::vec3(-1.0f, 0.0f, 0.0f));
+    glUniformMatrix4fv(viewMat_loc, 1, GL_FALSE, glm::value_ptr(viewMat));
+    
+    GLint projMat_loc = glGetUniformLocation(mainShader(), "projMat");
+    glm::mat4 projMat = glm::perspective(glm::radians(45.0f), 16.0f/9.0f, 0.1f, 100.0f);
+    glUniformMatrix4fv(projMat_loc, 1, GL_FALSE, glm::value_ptr(projMat));
 
     //// loop setup
     glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
-    eng.setAspectRatio(tex1.getWidth(), tex1.getHeight());
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // loop
 
-    GLfloat brightness = 0.0f;
-    bool up = true;
-    GLfloat step = 0.01f;
     auto render = [&]() {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        tex1.use(GL_TEXTURE0);
-        tex2.use(GL_TEXTURE1);
+        modelMat = glm::rotate(modelMat, glm::radians(0.4f), glm::vec3(0.0f, 0.0f, 1.0f));
+        glUniformMatrix4fv(modelMat_loc, 1, GL_FALSE, glm::value_ptr(modelMat));
 
-        mainShader.setUniform1f(brightness_loc, brightness);
-
-        if (up) {
-            brightness += step;
-            up = brightness >= 1.0f ? false : true;
-        } else {
-            brightness -= step;
-            up = brightness <= 0.0f ? true : false;
+        for (int i = 0; i < 6; i++) {
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(6*i*sizeof(GLint)));
         }
-
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
     };
 
     auto inputProc = [&]() {

@@ -16,11 +16,14 @@ public:
     shaderProg(const std::initializer_list<std::pair<std::string,int>>& init);
 
     ~shaderProg();
+    GLuint operator()();
 
     void use() const;
     GLint declareUniform(const std::string& name) const;
+
     void setUniform1f(GLint uniform, GLfloat value) const;
     void setUniform1i(GLint uniform, GLint value) const;
+    void setUniformMatrix4fv(GLint uniform, GLfloat* value, GLboolean transpose) const;
 };
 
 #endif

@@ -20,8 +20,7 @@ engine::engine(const int width, const int height, const int aspX, const int aspY
 
     glfwSetWindowPos(window, 400, 100);
     glfwSetFramebufferSizeCallback(window, fbSizeChanged); // set up which function to call if window changes
-    glfwSetWindowPosCallback(window, fbPosChanged);
-    
+    glfwSetWindowPosCallback(window, fbPosChanged);    
 
     //// load GLAD function pointers
  
@@ -43,12 +42,10 @@ engine::~engine() {
 }
 
 void engine::setRenderFunc(const std::function<void()>& render) {
-    
     renderFunc = render;
 }
 
 void engine::setInputProcFunc(const std::function<void()>& inputProc) {
-    
     inputProcFunc = inputProc;
 }
 
@@ -212,10 +209,16 @@ void APIENTRY debugMessage(GLenum source, GLenum type, GLuint id,
     // + Adds __debugbreak if _DEBUG is defined (automatic in visual studio)
     // note: __debugbreak is specific for MSVC, won't work with gcc/clang
     // -> in that case remove it and manually set breakpoints
-    if (_severity != "NOTIFICATION") {
+    if (std::string(_severity) != "NOTIFICATION") {
         printf("OpenGL error [%d]: %s of %s severity, raised from %s: %s\n", id, _type, _severity, _source, msg);
         #ifdef _DEBUG
         __debugbreak();
         #endif
     }
+    // else {
+    //     printf("OpenGL notification [%d]: raised from %s: %s\n", id, _source, msg);
+    //     #ifdef _DEBUG
+    //     __debugbreak();
+    //     #endif
+    // }
 }

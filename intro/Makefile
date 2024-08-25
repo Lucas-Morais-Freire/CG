@@ -1,11 +1,11 @@
 COMP = g++
-FLAGS = -Wall -Wextra -std=c++20 -g #-O3 # -g
+FLAGS = -Wall -Wextra -std=c++20 -O3 # -g
 
 TARGET = main.exe
 ARGS =
 
 SRCS = C:\Projetos\glad\src\glad.cpp src\engine.cpp src\shader.cpp src\stb_image.c src\texture.cpp
-INCLUDE_PATHS = C:\Projetos\glfw\include C:\Projetos\glad\include include
+INCLUDE_PATHS = C:\Projetos\glfw\include C:\Projetos\glad\include C:\Projetos\glm-1.0.1 include
 LIBS = opengl32 glfw3 gdi32 # user32
 LIB_PATHS = C:\Projetos\glfw\build\src
 

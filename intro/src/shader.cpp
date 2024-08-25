@@ -63,6 +63,10 @@ shaderProg::~shaderProg() {
     glDeleteProgram(id);
 }
 
+GLuint shaderProg::operator()() {
+    return id;
+}
+
 void shaderProg::use() const {
     glUseProgram(id);
 }
@@ -77,4 +81,8 @@ void shaderProg::setUniform1f(GLint uniform, GLfloat value) const {
 
 void shaderProg::setUniform1i(GLint uniform, GLint value) const {
     glUniform1i(uniform, value);
+}
+
+void shaderProg::setUniformMatrix4fv(GLint uniform, GLfloat* value, GLboolean transpose) const {
+    glUniformMatrix4fv(uniform, 1, transpose, value);
 }
