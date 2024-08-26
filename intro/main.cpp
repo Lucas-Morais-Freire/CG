@@ -196,7 +196,6 @@ int main() {
     camera camera(glm::vec3(0.0f, 0.0f, 0.0f),
                   glm::vec3(0.0f, 1.0f, 0.0f),
                   -90.0f, 0.0f);
-    camera.MouseSensitivity = 0.1f;
     // loop
 
 
@@ -216,6 +215,7 @@ int main() {
             }
         }
     };
+
 
     auto inputProc = [&](const std::list<int>& pressedKeys) {
         double currTime = glfwGetTime();
@@ -245,6 +245,22 @@ int main() {
         // std::cout << '\n';
     };
 
+    bool cursorHidden = true;
+    auto keyPress = [&](int key) {
+        switch (key) {
+        case GLFW_KEY_SPACE:
+            if (cursorHidden) {
+                glfwSetInputMode(eng(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                eng.setKeyMousePosFuncEnabled(false);
+                cursorHidden = false;
+            } else {
+                glfwSetInputMode(eng(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                eng.setKeyMousePosFuncEnabled(true);
+                cursorHidden = true;
+            }
+        }
+    };
+
     float lastx = eng.getWidth()/2.0, lasty = eng.getHeight()/2.0;
     bool firstMouse = true;
     auto mousePos = [&](double xpos, double ypos) {
@@ -255,16 +271,15 @@ int main() {
         }
 
         double xoff = xpos - lastx;
-        // double yoff = ypos - lasty;
         double yoff = lasty - ypos;
-        // std::cout << xoff << ' ' << yoff << '\n';
         lastx = xpos;
         lasty = ypos;
         camera.ProcessMouseMovement(xoff, yoff, true);
     };
 
     eng.setRenderFunc(render);
-    eng.setInputProcFunc(inputProc);
+    eng.setKeyHoldFunc(inputProc);
+    eng.setKeyPressFunc(keyPress);
     eng.setMousePosFunc(mousePos);
 
     eng.mainLoop();

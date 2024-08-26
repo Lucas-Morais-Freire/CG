@@ -22,9 +22,20 @@ protected:
     int width, height;
     GLFWwindow* window;
     std::array<std::list<int>::iterator, GLFW_KEY_LAST + 1> keyIters;
-    std::list<int> pressedKeys;
-    std::function<void(const std::list<int>&)> inputProcFunc;
-    std::function<void(double, double)> mousePosFunc;
+    std::list<int> heldKeys;
+
+    std::function<void(const std::list<int>&)> keyHoldFunc = nullptr;
+    bool keyHoldEnable = false;
+
+    std::function<void(int key)> keyPressFunc = nullptr;
+    bool keyPressEnable = false;
+
+    std::function<void(int key)> keyReleaseFunc = nullptr;
+    bool keyReleaseEnable = false;
+
+    std::function<void(double, double)> mousePosFunc = nullptr;
+    bool mousePosEnable = false;
+
     std::function<void()> renderFunc;
 
     friend void fbSizeChanged(GLFWwindow* window, int width, int height);
@@ -39,14 +50,21 @@ public:
     ~engine();
 
     void setRenderFunc(const std::function<void()>& render);
-    void setInputProcFunc(const std::function<void(const std::list<int>&)>& inputProc);
+    void setKeyHoldFunc(const std::function<void(const std::list<int>&)>& keyHold);
+    void setKeyHoldFuncEnabled(bool enable);
+    void setKeyPressFunc(const std::function<void(int key)>& keyPress);
+    void setKeyPressFuncEnabled(bool enable);
+    void setKeyReleaseFunc(const std::function<void(int key)>& keyRelease);
+    void setKeyReleaseFuncEnabled(bool enable);
     void setMousePosFunc(const std::function<void(double, double)>& mousePos);
+    void setKeyMousePosFuncEnabled(bool enable);
+
     void setWindowShouldClose(bool close) const;
     void setAspectRatio(const int aspX, const int aspY);
     int getWidth();
     int getHeight();
 
-    int getKey(int key);
+    GLFWwindow* operator()();
 
     void mainLoop();
 };

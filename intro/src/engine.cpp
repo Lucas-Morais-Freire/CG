@@ -31,8 +31,6 @@ engine::engine(const int width, const int height, const int aspX, const int aspY
     glfwSetWindowPos(window, 400, 100);
     glfwSetFramebufferSizeCallback(window, fbSizeChanged); // set up which function to call if window changes
     glfwSetWindowPosCallback(window, fbPosChanged);
-    glfwSetKeyCallback(window, keyEvent);
-    glfwSetCursorPosCallback(window, mousePosEvent);
 
     this->width = width;
     this->height = height;
@@ -52,12 +50,42 @@ void engine::setRenderFunc(const std::function<void()>& render) {
     renderFunc = render;
 }
 
-void engine::setInputProcFunc(const std::function<void(const std::list<int>&)>& inputProc) {
-    inputProcFunc = inputProc;
+void engine::setKeyHoldFunc(const std::function<void(const std::list<int>&)>& keyHold) {
+    keyHoldFunc = keyHold;
+    keyHoldEnable = true;
+    glfwSetKeyCallback(window, keyEvent);
+}
+
+void engine::setKeyHoldFuncEnabled(bool enable) {
+    keyHoldEnable = enable;
+}
+
+void engine::setKeyPressFunc(const std::function<void(int key)> &keyPress) {
+    keyPressFunc = keyPress;
+    keyPressEnable = true;
+}
+
+void engine::setKeyPressFuncEnabled(bool enable) {
+    keyPressEnable = enable;
+}
+
+void engine::setKeyReleaseFunc(const std::function<void(int key)> &keyRelease) {
+    keyReleaseFunc = keyRelease;
+    keyReleaseEnable = true;
+}
+
+void engine::setKeyReleaseFuncEnabled(bool enable) {
+    keyReleaseEnable = enable;
 }
 
 void engine::setMousePosFunc(const std::function<void(double, double)>& mousePos) {
     mousePosFunc = mousePos;
+    mousePosEnable = true;
+    glfwSetCursorPosCallback(window, mousePosEvent);
+}
+
+void engine::setKeyMousePosFuncEnabled(bool enable) {
+    mousePosEnable = enable;
 }
 
 void engine::setWindowShouldClose(bool close) const {
@@ -89,15 +117,14 @@ int engine::getWidth() {
 int engine::getHeight() {
     return height;
 }
-
-int engine::getKey(int key) {
-    return glfwGetKey(window, key);
+GLFWwindow *engine::operator()() {
+    return window;
 }
-
-void engine::mainLoop() {
+void engine::mainLoop()
+{
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        inputProcFunc(pressedKeys);
+        if (keyHoldEnable) keyHoldFunc(heldKeys);
         renderFunc();
         glfwSwapBuffers(window);
     }
@@ -136,16 +163,18 @@ void keyEvent(GLFWwindow *window, int key, int scancode, int action, int mods) {
     }
 
     if (action == GLFW_PRESS) {
-        this_eng->pressedKeys.emplace_front(key);
-        this_eng->keyIters[key] = this_eng->pressedKeys.begin();
+        this_eng->heldKeys.emplace_front(key);
+        this_eng->keyIters[key] = this_eng->heldKeys.begin();
+        if (this_eng->keyPressEnable) this_eng->keyPressFunc(key);
     } else if (action == GLFW_RELEASE) {
-        this_eng->pressedKeys.erase(this_eng->keyIters[key]);
+        this_eng->heldKeys.erase(this_eng->keyIters[key]);
+        if (this_eng->keyReleaseEnable) this_eng->keyReleaseFunc(key);
     }
 }
 
 void mousePosEvent(GLFWwindow *window, double xpos, double ypos) {
     engine* this_eng = (engine*)glfwGetWindowUserPointer(window);
-    this_eng->mousePosFunc(xpos, ypos);
+    if (this_eng->mousePosEnable) this_eng->mousePosFunc(xpos, ypos);
 }
 
 void APIENTRY debugMessage(GLenum source, GLenum type, GLuint id,
