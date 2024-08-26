@@ -16,14 +16,6 @@ engine::engine(const int width, const int height, const int aspX, const int aspY
     }
     
     glfwMakeContextCurrent(window); // make window part of context
-    glfwSetWindowUserPointer(window, this); // embed the address of this object to the window
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-    glfwSetWindowPos(window, 400, 100);
-    glfwSetFramebufferSizeCallback(window, fbSizeChanged); // set up which function to call if window changes
-    glfwSetWindowPosCallback(window, fbPosChanged);
-    glfwSetKeyCallback(window, keyEvent);
-    glfwSetCursorPosCallback(window, mousePosEvent);
 
     //// load GLAD function pointers
  
@@ -33,9 +25,18 @@ engine::engine(const int width, const int height, const int aspX, const int aspY
         throw std::runtime_error("Failed to initialize GLAD");
     }
 
-    setAspectRatio(aspX, aspY);
+    glfwSetWindowUserPointer(window, this); // embed the address of this object to the window
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    glfwSetWindowPos(window, 400, 100);
+    glfwSetFramebufferSizeCallback(window, fbSizeChanged); // set up which function to call if window changes
+    glfwSetWindowPosCallback(window, fbPosChanged);
+    glfwSetKeyCallback(window, keyEvent);
+    glfwSetCursorPosCallback(window, mousePosEvent);
+
     this->width = width;
     this->height = height;
+    setAspectRatio(aspX, aspY);
 
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -153,7 +154,6 @@ void APIENTRY debugMessage(GLenum source, GLenum type, GLuint id,
     const char* _source;
     const char* _type;
     const char* _severity;
-
     switch (source) {
     case GL_DEBUG_SOURCE_API:
         _source = "API";
@@ -250,10 +250,10 @@ void APIENTRY debugMessage(GLenum source, GLenum type, GLuint id,
         __debugbreak();
         #endif
     }
-    // else {
-    //     printf("OpenGL notification [%d]: raised from %s: %s\n", id, _source, msg);
-    //     #ifdef _DEBUG
-    //     __debugbreak();
-    //     #endif
-    // }
+    else {
+        printf("OpenGL notification [%d]: raised from %s: %s\n", id, _source, msg);
+        #ifdef _DEBUG
+        __debugbreak();
+        #endif
+    }
 }

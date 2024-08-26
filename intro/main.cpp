@@ -92,15 +92,16 @@ int main() {
 };
 
     // define the buffer for the vertices
+    GLuint vAttrib;
+    glGenVertexArrays(1, &vAttrib);
+    glBindVertexArray(vAttrib);
+    
     GLuint vBuffer;
     glGenBuffers(1, &vBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     // create Array Object
-    GLuint vAttrib;
-    glGenVertexArrays(1, &vAttrib);
-    glBindVertexArray(vAttrib);
 
     // tell ogl how to read recBuffer
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x)); // define vertex position attrib
@@ -140,12 +141,10 @@ int main() {
     // transformation matrices
 
     GLint modelMat_loc = glGetUniformLocation(mainShader(), "modelMat");
-    glm::mat4 modelMat(1.0f); // no change to model with respect to world
-    glUniformMatrix4fv(modelMat_loc, 1, GL_FALSE, glm::value_ptr(modelMat));
+    glm::mat4 modelMat; // no change to model with respect to world
 
     GLint viewMat_loc = glGetUniformLocation(mainShader(), "viewMat");
-    glm::mat4 viewMat(1.0f);
-    glUniformMatrix4fv(viewMat_loc, 1, GL_FALSE, glm::value_ptr(viewMat));
+    glm::mat4 viewMat;
     
     GLint projMat_loc = glGetUniformLocation(mainShader(), "projMat");
     glm::mat4 projMat = glm::perspective(glm::radians(45.0f), 16.0f/9.0f, 0.1f, 100.0f);
@@ -189,13 +188,13 @@ int main() {
 
     glActiveTexture(GL_TEXTURE0);
 
-    GLfloat lastTime = 0.0f;
-    GLfloat deltaTime = 0.0f;
+    double lastTime = 0.0f;
+    double deltaTime = 0.0f;
 
     // view matrix setup
 
-    camera camera({{0.0f}, {0.0f}, {0.0f}},
-                  {{0.0f}, {1.0f}, {0.0f}},
+    camera camera(glm::vec3(0.0f, 0.0f, 0.0f),
+                  glm::vec3(0.0f, 1.0f, 0.0f),
                   -90.0f, 0.0f);
     camera.MouseSensitivity = 0.1f;
     // loop
@@ -219,7 +218,7 @@ int main() {
     };
 
     auto inputProc = [&](const std::list<int>& pressedKeys) {
-        float currTime = glfwGetTime();
+        double currTime = glfwGetTime();
         deltaTime = currTime - lastTime;
         lastTime = currTime;
         
@@ -247,10 +246,18 @@ int main() {
     };
 
     float lastx = eng.getWidth()/2.0, lasty = eng.getHeight()/2.0;
+    bool firstMouse = true;
     auto mousePos = [&](double xpos, double ypos) {
+        if (firstMouse) {
+            lastx = xpos;
+            lasty = ypos;
+            firstMouse = false;
+        }
+
         double xoff = xpos - lastx;
         // double yoff = ypos - lasty;
         double yoff = lasty - ypos;
+        // std::cout << xoff << ' ' << yoff << '\n';
         lastx = xpos;
         lasty = ypos;
         camera.ProcessMouseMovement(xoff, yoff, true);
