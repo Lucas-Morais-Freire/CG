@@ -1,9 +1,16 @@
 #version 460 core
 
-in vec3 fColor;
+in vec2 fTexCrds;
+
+uniform sampler2D tex;
 
 out vec4 color;
 
 void main() {
-    color = vec4(fColor, 1.0f);
+    vec4 texColor = texture(tex, fTexCrds);
+    if (texColor.a <= 0.1) {
+        discard;
+    } else {
+        color = texColor;
+    }
 }

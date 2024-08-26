@@ -14,6 +14,7 @@ public:
     texture(const std::string& path, GLint internal_format);
     ~texture();
 
+    static void flipVerticallyOnLoad(bool flip);
     void use(GLenum unit);
     int getWidth();
     int getHeight();

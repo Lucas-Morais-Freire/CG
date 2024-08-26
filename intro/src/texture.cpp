@@ -1,6 +1,7 @@
 #include <texture.hpp>
 #include <stb_image.h>
 #include <stdexcept>
+#include <iostream>
 
 texture::texture(const std::string& path, GLint format_to_store) {
     glGenTextures(1, &id);
@@ -12,7 +13,6 @@ texture::texture(const std::string& path, GLint format_to_store) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    stbi_set_flip_vertically_on_load(1);
     unsigned char* data = stbi_load(path.c_str(), &width, &height, &nchannels, 0);
     if (data == nullptr) {
         glDeleteTextures(1, &id);
@@ -41,7 +41,12 @@ texture::~texture() {
     glDeleteTextures(1, &id);
 }
 
-void texture::use(GLenum unit) {
+void texture::flipVerticallyOnLoad(bool flip) {
+    stbi_set_flip_vertically_on_load(flip);
+}
+
+void texture::use(GLenum unit)
+{
     glActiveTexture(unit);
     glBindTexture(GL_TEXTURE_2D, id);
 }

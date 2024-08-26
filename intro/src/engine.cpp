@@ -17,10 +17,13 @@ engine::engine(const int width, const int height, const int aspX, const int aspY
     
     glfwMakeContextCurrent(window); // make window part of context
     glfwSetWindowUserPointer(window, this); // embed the address of this object to the window
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     glfwSetWindowPos(window, 400, 100);
     glfwSetFramebufferSizeCallback(window, fbSizeChanged); // set up which function to call if window changes
-    glfwSetWindowPosCallback(window, fbPosChanged);    
+    glfwSetWindowPosCallback(window, fbPosChanged);
+    glfwSetKeyCallback(window, keyEvent);
+    glfwSetCursorPosCallback(window, mousePosEvent);
 
     //// load GLAD function pointers
  
@@ -31,6 +34,9 @@ engine::engine(const int width, const int height, const int aspX, const int aspY
     }
 
     setAspectRatio(aspX, aspY);
+    this->width = width;
+    this->height = height;
+
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(debugMessage, nullptr);
@@ -45,8 +51,12 @@ void engine::setRenderFunc(const std::function<void()>& render) {
     renderFunc = render;
 }
 
-void engine::setInputProcFunc(const std::function<void()>& inputProc) {
+void engine::setInputProcFunc(const std::function<void(const std::list<int>&)>& inputProc) {
     inputProcFunc = inputProc;
+}
+
+void engine::setMousePosFunc(const std::function<void(double, double)>& mousePos) {
+    mousePosFunc = mousePos;
 }
 
 void engine::setWindowShouldClose(bool close) const {
@@ -56,8 +66,6 @@ void engine::setWindowShouldClose(bool close) const {
 void engine::setAspectRatio(const int aspX, const int aspY) {
     this->aspX = aspX; this->aspY = aspY;
     int vw, vh, vx, vy;
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
 
     if (this->aspY*width > this->aspX*height) { // if frame buffer has more width than it should
         vh = height;                            // viewport has the same height as the frame buffer
@@ -73,6 +81,14 @@ void engine::setAspectRatio(const int aspX, const int aspY) {
     glViewport(vx, vy, vw, vh);
 }
 
+int engine::getWidth() {
+    return width;
+}
+
+int engine::getHeight() {
+    return height;
+}
+
 int engine::getKey(int key) {
     return glfwGetKey(window, key);
 }
@@ -80,7 +96,7 @@ int engine::getKey(int key) {
 void engine::mainLoop() {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        inputProcFunc();
+        inputProcFunc(pressedKeys);
         renderFunc();
         glfwSwapBuffers(window);
     }
@@ -110,6 +126,25 @@ void fbPosChanged(GLFWwindow *window, int xpos, int ypos) {
     engine* this_eng = (engine*)glfwGetWindowUserPointer(window);
     this_eng->renderFunc();
     glfwSwapBuffers(window);
+}
+
+void keyEvent(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    engine* this_eng = (engine*)glfwGetWindowUserPointer(window);
+    if (key == GLFW_KEY_UNKNOWN) {
+        return;
+    }
+
+    if (action == GLFW_PRESS) {
+        this_eng->pressedKeys.emplace_front(key);
+        this_eng->keyIters[key] = this_eng->pressedKeys.begin();
+    } else if (action == GLFW_RELEASE) {
+        this_eng->pressedKeys.erase(this_eng->keyIters[key]);
+    }
+}
+
+void mousePosEvent(GLFWwindow *window, double xpos, double ypos) {
+    engine* this_eng = (engine*)glfwGetWindowUserPointer(window);
+    this_eng->mousePosFunc(xpos, ypos);
 }
 
 void APIENTRY debugMessage(GLenum source, GLenum type, GLuint id,
