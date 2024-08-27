@@ -279,10 +279,10 @@ void APIENTRY debugMessage(GLenum source, GLenum type, GLuint id,
         __debugbreak();
         #endif
     }
-    else {
-        printf("OpenGL notification [%d]: raised from %s: %s\n", id, _source, msg);
-        #ifdef _DEBUG
-        __debugbreak();
-        #endif
-    }
+    // else {
+    //     printf("OpenGL notification [%d]: raised from %s: %s\n", id, _source, msg);
+    //     #ifdef _DEBUG
+    //     __debugbreak();
+    //     #endif
+    // }
 }
