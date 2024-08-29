@@ -97,7 +97,7 @@ int main() {
     glUniform3fv(glGetUniformLocation(ballShader(), "camPos"), 1, glm::value_ptr(camera.Position));
     
     // light setup
-    glm::vec3 lightPos(0.f, 6.f, 0.f);
+    glm::vec3 lightPos(0.f, 4.f, 0.f);
     mainShader.use();
     glUniform3fv(glGetUniformLocation(mainShader(), "lightPos"), 1, glm::value_ptr(lightPos));
     ballShader.use();
@@ -123,16 +123,18 @@ int main() {
 
         if (modelmat_player[3].x - 0.5f >= modelmat_ball[3].x && modelmat_ball[3].x >= modelmat_player[3].x - 1.5f && modelmat_player[3].z - 1.f <= modelmat_ball[3].z && modelmat_ball[3].z <= modelmat_player[3].z + 1.0f) {
             modelmat_ball[3].x = modelmat_player[3].x - 1.5f;
-            ball_dir.x = -ball_dir.x;
+            float angle = 50.f*(modelmat_player[3].z - modelmat_ball[3].z);
+            ball_dir = glm::vec3(-glm::cos(glm::radians(angle)), 0.f, -glm::sin(glm::radians(angle)));
         } else if (modelmat_opponent[3].x + 0.5f <= modelmat_ball[3].x && modelmat_ball[3].x <= modelmat_opponent[3].x + 1.5f && modelmat_opponent[3].z - 1.f <= modelmat_ball[3].z && modelmat_ball[3].z <= modelmat_opponent[3].z + 1.0f) {
             modelmat_ball[3].x = modelmat_opponent[3].x + 1.5f;
-            ball_dir.x = -ball_dir.x;
+            float angle = 50.f*(modelmat_opponent[3].z - modelmat_ball[3].z);
+            ball_dir = glm::vec3(glm::cos(glm::radians(angle)), 0.f, -glm::sin(glm::radians(angle)));
         }
 
         if (modelmat_ball[3].z > modelmat_opponent[3].z) {
-            modelmat_opponent[3].z += 5.f*deltaTime;
+            modelmat_opponent[3].z += 4.f*deltaTime;
         } else if (modelmat_ball[3].z < modelmat_opponent[3].z) {
-            modelmat_opponent[3].z -= 5.0f*deltaTime;
+            modelmat_opponent[3].z -= 4.f*deltaTime;
         }
 
         if (modelmat_ball[3].x > 15.f || modelmat_ball[3].x < -15.f) {
@@ -151,12 +153,12 @@ int main() {
         mainShader.use();
         glUniformMatrix4fv(modelmat_loc_main, 1, GL_FALSE, glm::value_ptr(modelmat_court));
         court.Draw(mainShader);
-        glUniformMatrix4fv(modelmat_loc_main, 1, GL_FALSE, glm::value_ptr(modelmat_player));
-        player.Draw(mainShader);
-        glUniformMatrix4fv(modelmat_loc_main, 1, GL_FALSE, glm::value_ptr(modelmat_opponent));
-        opponent.Draw(mainShader);
 
         ballShader.use();
+        glUniformMatrix4fv(modelmat_loc_ball, 1, GL_FALSE, glm::value_ptr(modelmat_player));
+        player.Draw(ballShader);
+        glUniformMatrix4fv(modelmat_loc_ball, 1, GL_FALSE, glm::value_ptr(modelmat_opponent));
+        opponent.Draw(ballShader);
         glUniformMatrix4fv(modelmat_loc_ball, 1, GL_FALSE, glm::value_ptr(modelmat_ball));
         ball.Draw(ballShader);
     };

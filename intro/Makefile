@@ -1,5 +1,5 @@
 COMP = g++
-FLAGS = -Wall -Wextra -std=c++20 -g#-O3 # -g
+FLAGS = -Wall -Wextra -std=c++20 -O3 # -g
 
 TARGET = main.exe
 ARGS =

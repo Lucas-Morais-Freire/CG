@@ -11,9 +11,12 @@ uniform mat4 modelmat;
 uniform mat4 viewmat;
 uniform mat4 projmat;
 
+vec3 pos;
+
 void main() {
-    fPos = vPos;
+    pos = (modelmat*vec4(vPos, 1.0f)).xyz;
+    fPos = pos;
     fTexCrds = vTexCrds;
     fNorm = vNorm;
-    gl_Position = projmat*viewmat*modelmat*vec4(vPos, 1.0);
+    gl_Position = projmat*viewmat*vec4(pos, 1.f);
 }
