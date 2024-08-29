@@ -37,71 +37,69 @@ int main() {
     stbi_set_flip_vertically_on_load(1);
     std::cout << glGetString(GL_VERSION) << '\n';
 
+    // load shaders
     shaderProg mainShader {
         {"shaders/object.frag", GL_FRAGMENT_SHADER},
         {"shaders/object.vert", GL_VERTEX_SHADER}
     };
+    mainShader.use();
 
-    shaderProg ballShader {
-        {"shaders/ball.frag", GL_FRAGMENT_SHADER},
-        {"shaders/object.vert", GL_VERTEX_SHADER}
-    };
-
+    // load models
     Model court("res/models/court/quadra.obj", false);
     Model ball("res/models/ball/bola.obj", false);
     Model player("res/models/player/player.obj", false);
     Model opponent("res/models/player/player.obj", false);
 
+    // define model matrices
     glm::mat4 modelmat_court(1.0f);
-    glm::mat4 modelmat_ball = translate(glm::mat4(1.f), glm::vec3(-10.5f, 1.0f, 0.0f));
+    glm::mat4 modelmat_ball = glm::translate(glm::mat4(1.f), glm::vec3(-10.5f, 1.0f, 0.0f));
     modelmat_ball = glm::scale(modelmat_ball, glm::vec3(0.5f, 0.5f, 0.5f));
 
-    glm::mat4 modelmat_player = translate(glm::mat4(1.f), glm::vec3(12.f, 0.5f, 0.0f));
-    glm::mat4 modelmat_opponent = translate(glm::mat4(1.f), glm::vec3(-12.f, 0.5f, 0.0f));
-    GLint modelmat_loc_main = glGetUniformLocation(mainShader(), "modelmat");
-    GLint modelmat_loc_ball = glGetUniformLocation(ballShader(), "modelmat");
+    glm::mat4 modelmat_player = glm::translate(glm::mat4(1.f), glm::vec3(12.f, 0.5f, 0.0f));
+    glm::mat4 modelmat_opponent = glm::translate(glm::mat4(1.f), glm::vec3(-12.f, 0.5f, 0.0f));
+    modelmat_opponent = glm::rotate(modelmat_opponent, glm::radians(180.f), glm::vec3(0.f, 1.f, 0.f));
 
+    GLint modelmat_loc = glGetUniformLocation(mainShader(), "modelmat");
+
+    // define normal matrix
+    glm::mat3 normalmat;
+    GLint normalmat_loc = glGetUniformLocation(mainShader(), "normalmat");
+    
+    // define view matrices
     glm::mat4 viewmat;
-    GLint viewmat_loc_main = glGetUniformLocation(mainShader(), "viewmat");
-    GLint viewmat_loc_ball = glGetUniformLocation(ballShader(), "viewmat");
 
+    GLint viewmat_loc = glGetUniformLocation(mainShader(), "viewmat");
+    
+    // define projection matrices
     glm::mat4 projmat = glm::perspective(glm::radians(45.0f), 16.0f/9.0f, 0.1f, 100.0f);
-    GLint projmat_loc_main = glGetUniformLocation(mainShader(), "projmat");
-    GLint projmat_loc_ball = glGetUniformLocation(ballShader(), "projmat");
 
-    mainShader.use();
-    glUniformMatrix4fv(projmat_loc_main, 1, GL_FALSE, glm::value_ptr(projmat));
-    ballShader.use();
-    glUniformMatrix4fv(projmat_loc_ball, 1, GL_FALSE, glm::value_ptr(projmat));
+    GLint projmat_loc = glGetUniformLocation(mainShader(), "projmat");
+
+    glUniformMatrix4fv(projmat_loc, 1, GL_FALSE, glm::value_ptr(projmat));
 
     //// loop setup
     glClearColor(0.397,0.605,0.690, 1.0f);
     glEnable(GL_DEPTH_TEST);
     // glEnable(GL_BLEND); // Enable blending
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // glEnable(GL_CULL_FACE);
-    // glCullFace(GL_BACK);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     float lastTime = 0.0f;
     float deltaTime = 0.0f;
 
-    // view matrix setup
+    // camera setup
 
     camera camera(glm::vec3(15.0f, 4.0f, 0.0f),
                   glm::vec3(0.0f, 1.0f, 0.0f),
                   -180.0f, -20.0f);
-    mainShader.use();
     glUniform3fv(glGetUniformLocation(mainShader(), "camPos"), 1, glm::value_ptr(camera.Position));
-    ballShader.use();
-    glUniform3fv(glGetUniformLocation(ballShader(), "camPos"), 1, glm::value_ptr(camera.Position));
     
     // light setup
+    // glm::vec3 lightPos(0.f, 4.f, 0.f);
     glm::vec3 lightPos(0.f, 4.f, 0.f);
-    mainShader.use();
     glUniform3fv(glGetUniformLocation(mainShader(), "lightPos"), 1, glm::value_ptr(lightPos));
-    ballShader.use();
-    glUniform3fv(glGetUniformLocation(ballShader(), "lightPos"), 1, glm::value_ptr(lightPos));
 
     // ball setup
     glm::vec3 ball_dir(glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f)));
@@ -111,6 +109,8 @@ int main() {
 
     auto render = [&]() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        modelmat_ball = glm::rotate(modelmat_ball, glm::radians(360.f*deltaTime), glm::vec3(0.f, 1.f, 0.f));
 
         modelmat_ball[3] += glm::vec4(ball_dir*ball_vel*deltaTime, 0.f);
         if (modelmat_ball[3].z > 9.5f) {
@@ -133,8 +133,12 @@ int main() {
 
         if (modelmat_ball[3].z > modelmat_opponent[3].z) {
             modelmat_opponent[3].z += 4.f*deltaTime;
+            if (modelmat_opponent[3].z > 9.f)
+                modelmat_opponent[3].z = 9.f;
         } else if (modelmat_ball[3].z < modelmat_opponent[3].z) {
             modelmat_opponent[3].z -= 4.f*deltaTime;
+            if (modelmat_opponent[3].z < -9.f)
+                modelmat_opponent[3].z = -9.f;
         }
 
         if (modelmat_ball[3].x > 15.f || modelmat_ball[3].x < -15.f) {
@@ -144,23 +148,27 @@ int main() {
         }
 
         viewmat = camera.GetViewMatrix();
+        glUniformMatrix4fv(viewmat_loc, 1, GL_FALSE, glm::value_ptr(viewmat));
 
-        mainShader.use();
-        glUniformMatrix4fv(viewmat_loc_main, 1, GL_FALSE, glm::value_ptr(viewmat));
-        ballShader.use();
-        glUniformMatrix4fv(viewmat_loc_ball, 1, GL_FALSE, glm::value_ptr(viewmat));
-        
-        mainShader.use();
-        glUniformMatrix4fv(modelmat_loc_main, 1, GL_FALSE, glm::value_ptr(modelmat_court));
+        glUniformMatrix4fv(modelmat_loc, 1, GL_FALSE, glm::value_ptr(modelmat_court));
+        normalmat = glm::mat3(glm::transpose(glm::inverse(modelmat_court)));
+        glUniformMatrix3fv(normalmat_loc, 1, GL_FALSE, glm::value_ptr(normalmat));
         court.Draw(mainShader);
 
-        ballShader.use();
-        glUniformMatrix4fv(modelmat_loc_ball, 1, GL_FALSE, glm::value_ptr(modelmat_player));
-        player.Draw(ballShader);
-        glUniformMatrix4fv(modelmat_loc_ball, 1, GL_FALSE, glm::value_ptr(modelmat_opponent));
-        opponent.Draw(ballShader);
-        glUniformMatrix4fv(modelmat_loc_ball, 1, GL_FALSE, glm::value_ptr(modelmat_ball));
-        ball.Draw(ballShader);
+        glUniformMatrix4fv(modelmat_loc, 1, GL_FALSE, glm::value_ptr(modelmat_player));
+        normalmat = glm::mat3(glm::transpose(glm::inverse(modelmat_player)));
+        glUniformMatrix3fv(normalmat_loc, 1, GL_FALSE, glm::value_ptr(normalmat));
+        player.Draw(mainShader);
+
+        glUniformMatrix4fv(modelmat_loc, 1, GL_FALSE, glm::value_ptr(modelmat_opponent));
+        normalmat = glm::mat3(glm::transpose(glm::inverse(modelmat_opponent)));
+        glUniformMatrix3fv(normalmat_loc, 1, GL_FALSE, glm::value_ptr(normalmat));
+        opponent.Draw(mainShader);
+
+        glUniformMatrix4fv(modelmat_loc, 1, GL_FALSE, glm::value_ptr(modelmat_ball));
+        normalmat = glm::mat3(glm::transpose(glm::inverse(modelmat_ball)));
+        glUniformMatrix3fv(normalmat_loc, 1, GL_FALSE, glm::value_ptr(normalmat));
+        ball.Draw(mainShader);
     };
 
 
@@ -176,20 +184,12 @@ int main() {
                 break;
             case GLFW_KEY_D:
                 camera.ProcessKeyboard(RIGHT, deltaTime);
-                mainShader.use();
                 glUniform3fv(glGetUniformLocation(mainShader(), "camPos"), 1, glm::value_ptr(camera.Position));
-                ballShader.use();
-                glUniform3fv(glGetUniformLocation(ballShader(), "camPos"), 1, glm::value_ptr(camera.Position));
-
                 modelmat_player[3].z = camera.Position.z;
                 break;
             case GLFW_KEY_A:
                 camera.ProcessKeyboard(LEFT, deltaTime);
-                mainShader.use();
                 glUniform3fv(glGetUniformLocation(mainShader(), "camPos"), 1, glm::value_ptr(camera.Position));
-                ballShader.use();
-                glUniform3fv(glGetUniformLocation(ballShader(), "camPos"), 1, glm::value_ptr(camera.Position));
-
                 modelmat_player[3].z = camera.Position.z;
                 break;
             }

@@ -21,19 +21,29 @@ uniform vec3 lightPos;
 // camera position
 uniform vec3 camPos;
 
-float Ia = 0.3;
-float Il = 1.0;
+float Ia = 0.2f;
+float Il = 1.6f;
 
-void main() {    
+float kc = 1.f;
+float kl = 0.014;
+float kq = 0.0007;
+
+void main() {
+    float d = length(lightPos - fPos);
+    float fatt = 1.0f/(kc + kl*d + kq*d*d);
+    // float fatt = 1.f;
+
     vec3 N = normalize(fNorm);
     vec3 L = normalize(lightPos - fPos);
     vec3 O = normalize(camPos - fPos);
     vec3 R = reflect(-L, N);
 
-    vec3 C = ka*Ia + Il*(kd*abs(dot(N,L)) + ks*pow(abs(dot(O,R)), ns));
+    vec3 C = ka*Ia + fatt*Il*(kd*max(dot(N,L), 0.f) + ks*pow(max(dot(O,R),0.f), ns));
     if (hasTexture == 1) {
         color = texture(texture_diffuse1, fTexCrds)*vec4(C,1.f);
     } else {
         color = vec4(C,1.f);
     }
+
+    // color = vec4(normalize(fNorm), 1.f);
 }
